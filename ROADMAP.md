@@ -20,6 +20,49 @@
 
 ---
 
+## Infrastructure Setup (BEFORE Phase 1)
+
+**Priority: CRITICAL - Do This First**
+
+**Email & Identity:**
+- [ ] **Google Workspace Business Starter** (129 SEK/month)
+  - Create `anton@ticko.se` as primary email
+  - Set up `support@ticko.se`, `billing@ticko.se` aliases
+  - Configure DNS (MX records) for ticko.se domain
+  - **Why:** Professional email for all services, branding, customer trust
+
+**Database:**
+- [ ] **New Supabase Account** (using anton@ticko.se)
+  - Free tier: 2 projects limit (you're at limit on current account)
+  - Create fresh account to avoid touching existing projects
+  - **Why:** Real database for leads, quotes, users instead of localStorage
+
+**Hosting:**
+- [ ] **New Vercel Account** (using anton@ticko.se)
+  - Hobby tier is free, Pro is $20/month
+  - Connect to tickosales GitHub repo
+  - Custom domain: `app.ticko.se` or `ticko.se`
+  - **Why:** Production hosting, serverless functions for API routes
+
+**Email API:**
+- [ ] **Resend Account** (using anton@ticko.se)
+  - Free tier: 3,000 emails/month
+  - Verify `ticko.se` domain for sending
+  - **Why:** Send quotes via email, transactional emails
+
+**Optional/Later:**
+- [ ] **SendGrid** (backup email provider)
+- [ ] **PostHog** (analytics, free tier)
+- [ ] **Sentry** (error tracking, free tier)
+- [ ] **Stripe** (payments, when you launch pricing)
+
+**Account Consolidation:**
+- Use `anton@ticko.se` for ALL services
+- Store credentials in 1Password/Bitwarden
+- Document API keys in `.env.example` (never commit real keys)
+
+---
+
 ## Competitor Analysis: GrowTrack
 
 **What they do well:**
