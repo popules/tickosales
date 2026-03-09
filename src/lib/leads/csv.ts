@@ -1,11 +1,16 @@
 import { LeadCreateInput, LeadType } from "./types";
 
+const VALID_TYPES = [
+  "brf", "fastighetsforvaltare", "fastighetsförvaltare",
+  "bygg", "ventilation", "tak", "vvs", "el", "mark", "transport",
+  "consulting", "marketing", "it", "design", "other"
+];
+
 function asType(value: string): LeadType {
   const v = value.trim().toLowerCase();
-  if (v === "brf") return "brf";
-  if (v === "fastighetsforvaltare") return "fastighetsforvaltare";
-  if (v === "fastighetsförvaltare") return "fastighetsforvaltare";
-  throw new Error("Invalid lead type");
+  if (VALID_TYPES.includes(v)) return v as LeadType;
+  // Default fallback
+  return "other";
 }
 
 function splitCsvLine(line: string): string[] {

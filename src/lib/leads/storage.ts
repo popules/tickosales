@@ -15,10 +15,35 @@ function uid() {
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
+const SAMPLE_LEADS: LeadCreateInput[] = [
+  { name: "ByggPro AB", websiteUrl: "byggpro.se", kommun: "Stockholm", type: "bygg" },
+  { name: "VVS-Specialisten", websiteUrl: "vvsspecialisten.se", kommun: "Göteborg", type: "vvs" },
+  { name: "DesignStudio Nordic", websiteUrl: "designstudio.se", kommun: "Malmö", type: "design" },
+  { name: "Tak & Fasad i Sverige", websiteUrl: "takfasad.se", kommun: "Uppsala", type: "tak" },
+  { name: "El-Consult AB", websiteUrl: "elconsult.se", kommun: "Linköping", type: "el" },
+];
+
 export function loadLeads(): Lead[] {
   if (typeof window === "undefined") return [];
   const raw = window.localStorage.getItem(STORAGE_KEY);
-  if (!raw) return [];
+  if (!raw) {
+    // First time - add sample leads
+    const samples = SAMPLE_LEADS.map((input): Lead => ({
+      id: uid(),
+      name: input.name,
+      websiteUrl: normalizeUrl(input.websiteUrl),
+      kommun: input.kommun,
+      type: input.type,
+      contactStatus: "new",
+      enrichmentStatus: "pending",
+      emails: [],
+      phones: [],
+      createdAt: nowIso(),
+      updatedAt: nowIso(),
+    }));
+    saveLeads(samples);
+    return samples;
+  }
   try {
     const parsed = JSON.parse(raw) as Lead[];
     if (!Array.isArray(parsed)) return [];

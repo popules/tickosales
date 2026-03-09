@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { loadLeads } from "@/lib/leads/storage";
+import { downloadQuotePDF } from "@/lib/quotes/pdf";
 import { Lead } from "@/lib/leads/types";
 import { 
   FileText, 
@@ -122,47 +123,15 @@ export default function OfferterPage() {
     }));
   };
 
-  const generatePDF = async () => {
+  const generatePDF = () => {
+    if (!selectedLead) return;
     setIsGenerating(true);
-    try {
-      // Simulate PDF generation
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Create a simple PDF content (in real app, use a PDF library like jsPDF)
-      const pdfContent = `
-OFFERT - ${quote.quoteNumber}
-Datum: ${quote.date}
-Giltig till: ${quote.validUntil}
-
-Kund: ${selectedLead?.name}
-${selectedLead?.kommun}
-
-Artiklar:
-${quote.items.map(item => 
-  `${item.description} - ${item.quantity}st × ${item.unitPrice}kr = ${item.total}kr`
-).join('\n')}
-
-Summa: ${quote.subtotal}kr
-Moms (25%): ${quote.vat}kr
-Totalt: ${quote.total}kr
-
-Noteringar:
-${quote.notes}
-      `;
-
-      // Download as text file (placeholder for PDF)
-      const blob = new Blob([pdfContent], { type: 'text/plain' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `offert-${quote.quoteNumber}.txt`;
-      a.click();
-      URL.revokeObjectURL(url);
-
-      setQuote(prev => ({ ...prev, status: 'sent' }));
-    } finally {
+    
+    // Small delay to show loading state
+    setTimeout(() => {
+      downloadQuotePDF(quote, selectedLead);
       setIsGenerating(false);
-    }
+    }, 500);
   };
 
   const sendEmail = async () => {
@@ -222,8 +191,8 @@ ${quote.notes}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <Select value={quote.leadId || "none"} onValueChange={(value: string) => {
-              const lead = value === "none" ? null : leads.find(l => l.id === value);
+            <Select value={quote.leadId || "none"} onValueChange={(value) => {
+              const lead = value === "none" ? null : leads.find(l => l.id === value) || null;
               setSelectedLead(lead);
               setQuote(prev => ({ ...prev, leadId: value === "none" ? "" : value }));
             }}>

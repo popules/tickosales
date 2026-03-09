@@ -9,7 +9,7 @@ import {
   upsertLeads,
 } from "@/lib/leads/storage";
 import { Lead, LeadContactStatus, LeadType } from "@/lib/leads/types";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -50,6 +50,11 @@ export default function LeadsPage() {
   const [busyIds, setBusyIds] = useState<Set<string>>(() => new Set());
   const [importError, setImportError] = useState<string>("");
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -140,7 +145,7 @@ export default function LeadsPage() {
                 <div>
                   <h1 className="text-xl font-semibold">Leads</h1>
                   <p className="text-sm text-muted-foreground">
-                    {filtered.length} av {leads.length} leads
+                    {mounted ? `${filtered.length} av ${leads.length} leads` : "Laddar..."}
                   </p>
                 </div>
                 <div className="relative">
@@ -235,6 +240,24 @@ export default function LeadsPage() {
                   <p className="text-muted-foreground mb-4">
                     Importera en CSV-fil för att komma igång
                   </p>
+                  
+                  {/* CSV Template */}
+                  <div className="bg-slate-100 rounded-lg p-4 mb-4 text-left w-full max-w-md">
+                    <p className="text-sm font-medium text-slate-700 mb-2">CSV-format (kolumner):</p>
+                    <code className="text-xs text-slate-600 block mb-3">
+                      namn,hemsida,kommun,typ
+                    </code>
+                    <p className="text-xs text-slate-500 mb-2">Exempel:</p>
+                    <code className="text-xs text-slate-600 block bg-white p-2 rounded">
+                      ByggPro AB,byggpro.se,Stockholm,bygg<br/>
+                      VVS-Specialisten,vvsspecialisten.se,Göteborg,vvs<br/>
+                      DesignStudio,designstudio.se,Malmö,design
+                    </code>
+                    <p className="text-xs text-slate-400 mt-2">
+                      Tillåtna typer: bygg, vvs, el, tak, ventilation, mark, transport, consulting, marketing, it, design, brf, fastighetsforvaltare, other
+                    </p>
+                  </div>
+                  
                   <div className="relative">
                     <input
                       type="file"
@@ -242,7 +265,7 @@ export default function LeadsPage() {
                       className="absolute inset-0 cursor-pointer opacity-0"
                       onChange={(e) => void onCsvFile(e.target.files?.[0] ?? null)}
                     />
-                    <Button>Importera första CSV</Button>
+                    <Button>Importera CSV</Button>
                   </div>
                 </div>
               ) : (
