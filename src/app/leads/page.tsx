@@ -10,12 +10,19 @@ import {
 } from "@/lib/leads/storage";
 import { Lead, LeadContactStatus, LeadType } from "@/lib/leads/types";
 import { useMemo, useState, useEffect } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Upload, Mail, Phone, Globe, CheckCircle2, Clock, User, X, FileText } from "lucide-react";
+import { Search, Upload, Mail, Phone, Globe, CheckCircle2, Clock, User, X, FileText, HelpCircle } from "lucide-react";
 
 function typeLabel(type: LeadType) {
   if (type === "brf") return "BRF";
@@ -148,17 +155,60 @@ export default function LeadsPage() {
                     {mounted ? `${filtered.length} av ${leads.length} leads` : "Laddar..."}
                   </p>
                 </div>
-                <div className="relative">
-                  <input
-                    type="file"
-                    accept=".csv,text/csv"
-                    className="absolute inset-0 cursor-pointer opacity-0"
-                    onChange={(e) => void onCsvFile(e.target.files?.[0] ?? null)}
-                  />
-                  <Button size="sm" className="gap-2">
-                    <Upload className="h-4 w-4" />
-                    Importera CSV
-                  </Button>
+                <div className="flex items-center gap-2">
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                        <HelpCircle className="h-4 w-4" />
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-md">
+                      <DialogHeader>
+                        <DialogTitle>Så här importerar du leads</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4 text-sm">
+                        <p className="text-muted-foreground">
+                          Ladda upp en CSV-fil med dina potentiella kunder. Varje rad blir ett lead.
+                        </p>
+                        
+                        <div className="bg-slate-100 rounded-lg p-4">
+                          <p className="font-medium mb-2">Obligatoriska kolumner:</p>
+                          <code className="text-xs bg-white p-2 rounded block">
+                            namn,hemsida,kommun,typ
+                          </code>
+                        </div>
+                        
+                        <div>
+                          <p className="font-medium mb-2">Exempel på fil:</p>
+                          <pre className="text-xs bg-slate-900 text-slate-100 p-3 rounded overflow-x-auto">
+{`ByggPro AB,byggpro.se,Stockholm,bygg
+VVS-Specialisten,vvsspecialisten.se,Göteborg,vvs
+DesignStudio,designstudio.se,Malmö,design`}
+                          </pre>
+                        </div>
+                        
+                        <div>
+                          <p className="font-medium mb-2">Giltiga typer:</p>
+                          <p className="text-xs text-muted-foreground">
+                            bygg, vvs, el, tak, ventilation, mark, transport, consulting, marketing, it, design, brf, fastighetsforvaltare, other
+                          </p>
+                        </div>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                  
+                  <div className="relative">
+                    <input
+                      type="file"
+                      accept=".csv,text/csv"
+                      className="absolute inset-0 cursor-pointer opacity-0"
+                      onChange={(e) => void onCsvFile(e.target.files?.[0] ?? null)}
+                    />
+                    <Button size="sm" className="gap-2">
+                      <Upload className="h-4 w-4" />
+                      Importera CSV
+                    </Button>
+                  </div>
                 </div>
               </div>
 
