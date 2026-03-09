@@ -1,4 +1,23 @@
-# Ticko Sales - Comprehensive Product Roadmap
+# Ticko Sales - Product Roadmap
+
+## Vision: 10x Better Outbound Sales Workflow
+
+**Not just another CRM. Not a Fortnox clone.**
+
+Ticko is **outbound sales automation for Swedish trades** — the complete flow from finding leads to closing deals in one tool.
+
+**The workflow we own:**
+```
+Find leads (Google Maps) → Enrich contacts → Build quote → Send → Follow up → Win deal
+```
+
+**Why this wins:**
+- Lime CRM = sales management (you already have leads)
+- Pipedrive = pipeline tracking (manual entry)
+- Fortnox = accounting with CRM bolt-on (weak)
+- **Ticko = lead generation + quotes + follow-ups in one flow**
+
+---
 
 ## Current State (March 2026)
 
@@ -84,9 +103,11 @@
 
 ## Roadmap by Phase
 
-### Phase 1: Foundation Fix (This Week)
+### Phase 1: Close the Loop (This Week)
 
 **Priority: CRITICAL**
+
+**Goal:** Make the quote → send → follow-up workflow actually work end-to-end
 
 1. **Company Profile System**
    - Settings page for your business info
@@ -108,7 +129,8 @@
    - Send quotes via email (SendGrid/Resend)
    - Email templates with your branding
    - Track opens/clicks
-   - **Impact:** Close the loop - send quotes directly
+   - Auto-create follow-up task after sending quote
+   - **Impact:** Close the loop - send quotes directly, never forget follow-ups
 
 ---
 
@@ -136,9 +158,11 @@
 
 ---
 
-### Phase 3: Lead Generation (Week 3-4)
+### Phase 3: Never Run Out of Leads (Week 3-4)
 
 **Priority: HIGH**
+
+**Goal:** Eliminate the #1 sales problem: "I don't have anyone to call"
 
 1. **Google Places API Integration**
    - Search: "byggfirmor stockholm"
@@ -188,6 +212,8 @@
 ### Phase 5: Automation & Scale (Month 2+)
 
 **Priority: MEDIUM**
+
+**Goal:** Set-and-forget sales machine
 
 1. **Email Sequences**
    - Automated follow-up emails
@@ -271,20 +297,30 @@
 
 ## Next Steps (Tomorrow)
 
-1. Build Company Profile settings page
-2. Update PDF generator to use company branding
-3. Add terms & conditions to quotes
-4. Push to GitHub
+**Focus: Close the Loop**
+
+1. Set up infrastructure (Google Workspace, Supabase, Vercel, Resend)
+2. Build Company Profile settings page
+3. Update PDF generator to use company branding
+4. Add terms & conditions to quotes
+5. Wire email sending to auto-create follow-up tasks
+6. Push to GitHub
+
+**Validation target:** Send first real quote to a real lead by end of week.
 
 ---
 
 ## Long-term Vision
 
-**Month 3:** Public launch, first 100 paying customers
-**Month 6:** Integrations ecosystem, partner program
-**Month 12:** #1 Swedish SMB sales tool
+**Month 1:** Private beta, 5 users sending real quotes
+**Month 2:** Public launch, first 20 paying customers
+**Month 3:** 100 customers, break-even on infra costs
+**Month 6:** 300 customers, consider hiring
+**Month 12:** 1000 customers, €300k ARR, #1 Swedish outbound sales tool
 
-**Exit opp:** Acquired by Fortnox/Visma/Dustin
+**Exit opportunities:** Acquired by Fortnox, Visma, or Nordic SaaS rollup
+
+**The bet:** Swedish trades (bygg, vvs, el, etc.) will pay €30/month for a tool that gives them leads + closes deals.
 
 ---
 
