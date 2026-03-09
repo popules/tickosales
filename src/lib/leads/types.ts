@@ -1,4 +1,18 @@
-export type LeadType = "brf" | "fastighetsforvaltare";
+export type LeadType = 
+  | "brf" 
+  | "fastighetsforvaltare"
+  | "bygg"
+  | "ventilation"
+  | "tak"
+  | "vvs"
+  | "el"
+  | "mark"
+  | "transport"
+  | "consulting"
+  | "marketing"
+  | "it"
+  | "design"
+  | "other";
 export type LeadContactStatus = "new" | "saved" | "contacted" | "dismissed";
 export type EnrichmentStatus = "pending" | "fetched" | "enriched" | "failed";
 

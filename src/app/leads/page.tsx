@@ -10,6 +10,12 @@ import {
 } from "@/lib/leads/storage";
 import { Lead, LeadContactStatus, LeadType } from "@/lib/leads/types";
 import { useMemo, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Search, Upload, Mail, Phone, Globe, CheckCircle2, Clock, User, X, FileText } from "lucide-react";
 
 function typeLabel(type: LeadType) {
   if (type === "brf") return "BRF";
@@ -23,11 +29,16 @@ function statusLabel(status: LeadContactStatus) {
   return "Inte relevant";
 }
 
-function pillClass(status: LeadContactStatus) {
-  if (status === "new") return "bg-blue-500/10 text-blue-700 dark:text-blue-300";
-  if (status === "saved") return "bg-zinc-900/10 text-zinc-800 dark:bg-white/10 dark:text-zinc-200";
-  if (status === "contacted") return "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300";
-  return "bg-zinc-500/10 text-zinc-600 dark:text-zinc-300";
+function statusColor(status: LeadContactStatus) {
+  if (status === "new") return "bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300";
+  if (status === "saved") return "bg-gray-100 text-gray-800 dark:bg-gray-900/50 dark:text-gray-300";
+  if (status === "contacted") return "bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300";
+  return "bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300";
+}
+
+function typeColor(type: LeadType) {
+  if (type === "brf") return "bg-purple-100 text-purple-800 dark:bg-purple-900/50 dark:text-purple-300";
+  return "bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-300";
 }
 
 export default function LeadsPage() {
@@ -38,6 +49,7 @@ export default function LeadsPage() {
   const [status, setStatus] = useState<LeadContactStatus | "">("");
   const [busyIds, setBusyIds] = useState<Set<string>>(() => new Set());
   const [importError, setImportError] = useState<string>("");
+  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -77,6 +89,9 @@ export default function LeadsPage() {
 
   function setStatusForLead(id: string, nextStatus: LeadContactStatus) {
     setLeads(updateLeadStatus(id, nextStatus));
+    if (selectedLead?.id === id) {
+      setSelectedLead({ ...selectedLead, contactStatus: nextStatus });
+    }
   }
 
   async function enrichLead(lead: Lead) {
@@ -95,13 +110,15 @@ export default function LeadsPage() {
       };
 
       if (!data.ok) throw new Error("Enrichment failed");
-      setLeads(
-        applyEnrichmentResult(lead.id, {
-          enrichmentStatus: data.enrichmentStatus,
-          emails: data.emails,
-          phones: data.phones,
-        }),
-      );
+      const updated = applyEnrichmentResult(lead.id, {
+        enrichmentStatus: data.enrichmentStatus,
+        emails: data.emails,
+        phones: data.phones,
+      });
+      setLeads(updated);
+      if (selectedLead?.id === lead.id) {
+        setSelectedLead({ ...selectedLead, enrichmentStatus: data.enrichmentStatus, emails: data.emails, phones: data.phones });
+      }
     } finally {
       setBusyIds((prev) => {
         const next = new Set(prev);
@@ -112,186 +129,355 @@ export default function LeadsPage() {
   }
 
   return (
-    <AppShell activePath="/leads">
-      <div className="space-y-8">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div className="space-y-1">
-            <h1 className="text-2xl font-semibold tracking-tight">Leads</h1>
-            <p className="text-sm text-zinc-600 dark:text-zinc-400">
-              Importera en lista med BRF/fastighetsförvaltare och berika med kontaktuppgifter från webbplatsen.
-            </p>
-          </div>
+    <AppShell>
+      <div className="flex h-[calc(100vh-3.5rem)]">
+        {/* Left Panel - Lead List */}
+        <div className="w-1/2 border-r border-border bg-background/50">
+          <div className="flex h-full flex-col">
+            {/* Header */}
+            <div className="border-b border-border bg-background/60 p-4 backdrop-blur">
+              <div className="mb-4 flex items-center justify-between">
+                <div>
+                  <h1 className="text-xl font-semibold">Leads</h1>
+                  <p className="text-sm text-muted-foreground">
+                    {filtered.length} av {leads.length} leads
+                  </p>
+                </div>
+                <div className="relative">
+                  <input
+                    type="file"
+                    accept=".csv,text/csv"
+                    className="absolute inset-0 cursor-pointer opacity-0"
+                    onChange={(e) => void onCsvFile(e.target.files?.[0] ?? null)}
+                  />
+                  <Button size="sm" className="gap-2">
+                    <Upload className="h-4 w-4" />
+                    Importera CSV
+                  </Button>
+                </div>
+              </div>
 
-          <div className="flex items-center gap-3">
-            <label className="group relative inline-flex cursor-pointer items-center justify-center overflow-hidden rounded-full bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200">
-              Importera CSV
-              <input
-                type="file"
-                accept=".csv,text/csv"
-                className="absolute inset-0 cursor-pointer opacity-0"
-                onChange={(e) => void onCsvFile(e.target.files?.[0] ?? null)}
-              />
-            </label>
-          </div>
-        </div>
+              {/* Filters */}
+              <div className="grid grid-cols-2 gap-2">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    placeholder="Sök leads..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
+                <Select value={kommun || "all"} onValueChange={(value) => setKommun(value === "all" ? "" : value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Alla kommuner" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Alla kommuner</SelectItem>
+                    {kommunOptions.map((k) => (
+                      <SelectItem key={k} value={k}>
+                        {k}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select value={type || "all"} onValueChange={(value: LeadType | "all") => setType(value === "all" ? "" : value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Alla typer" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Alla typer</SelectItem>
+                    <SelectItem value="brf">BRF</SelectItem>
+                    <SelectItem value="fastighetsforvaltare">Fastighetsförvaltare</SelectItem>
+                    <SelectItem value="bygg">Bygg</SelectItem>
+                    <SelectItem value="ventilation">Ventilation</SelectItem>
+                    <SelectItem value="tak">Tak</SelectItem>
+                    <SelectItem value="vvs">VVS</SelectItem>
+                    <SelectItem value="el">El</SelectItem>
+                    <SelectItem value="mark">Mark/Anläggning</SelectItem>
+                    <SelectItem value="transport">Transport</SelectItem>
+                    <SelectItem value="consulting">Konsult</SelectItem>
+                    <SelectItem value="marketing">Marketing</SelectItem>
+                    <SelectItem value="it">IT/Teknik</SelectItem>
+                    <SelectItem value="design">Design</SelectItem>
+                    <SelectItem value="other">Annat</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={status || "all"} onValueChange={(value: LeadContactStatus | "all") => setStatus(value === "all" ? "" : value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Alla statusar" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Alla statusar</SelectItem>
+                    <SelectItem value="new">Ny</SelectItem>
+                    <SelectItem value="saved">Sparad</SelectItem>
+                    <SelectItem value="contacted">Kontaktad</SelectItem>
+                    <SelectItem value="dismissed">Inte relevant</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-        {importError ? (
-          <div className="rounded-2xl border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-700 dark:text-red-300">
-            {importError}
-          </div>
-        ) : null}
-
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Sök namn, kommun, URL…"
-            className="h-10 w-full rounded-xl border border-black/10 bg-white/60 px-3 text-sm outline-none ring-0 placeholder:text-zinc-400 focus:border-black/20 dark:border-white/10 dark:bg-white/5"
-          />
-          <select
-            value={kommun}
-            onChange={(e) => setKommun(e.target.value)}
-            className="h-10 w-full rounded-xl border border-black/10 bg-white/60 px-3 text-sm outline-none focus:border-black/20 dark:border-white/10 dark:bg-white/5"
-          >
-            <option value="">Alla kommuner</option>
-            {kommunOptions.map((k) => (
-              <option key={k} value={k}>
-                {k}
-              </option>
-            ))}
-          </select>
-          <select
-            value={type}
-            onChange={(e) => setType((e.target.value as LeadType | "") ?? "")}
-            className="h-10 w-full rounded-xl border border-black/10 bg-white/60 px-3 text-sm outline-none focus:border-black/20 dark:border-white/10 dark:bg-white/5"
-          >
-            <option value="">Alla typer</option>
-            <option value="brf">BRF</option>
-            <option value="fastighetsforvaltare">Fastighetsförvaltare</option>
-          </select>
-          <select
-            value={status}
-            onChange={(e) => setStatus((e.target.value as LeadContactStatus | "") ?? "")}
-            className="h-10 w-full rounded-xl border border-black/10 bg-white/60 px-3 text-sm outline-none focus:border-black/20 dark:border-white/10 dark:bg-white/5"
-          >
-            <option value="">Alla statusar</option>
-            <option value="new">Ny</option>
-            <option value="saved">Sparad</option>
-            <option value="contacted">Kontaktad</option>
-            <option value="dismissed">Inte relevant</option>
-          </select>
-        </div>
-
-        <div className="space-y-3">
-          {filtered.length === 0 ? (
-            <div className="rounded-3xl border border-black/5 bg-white/50 p-8 text-sm text-zinc-600 dark:border-white/10 dark:bg-white/5 dark:text-zinc-300">
-              Inga leads än. Importera en CSV med kolumner: <span className="font-medium">namn</span>,{" "}
-              <span className="font-medium">hemsida/url</span>, <span className="font-medium">kommun</span>.
+              {importError && (
+                <div className="mt-2 rounded-lg border border-red-200 bg-red-50 p-2 text-sm text-red-700 dark:border-red-800 dark:bg-red-900/20 dark:text-red-300">
+                  {importError}
+                </div>
+              )}
             </div>
-          ) : (
-            filtered.map((lead) => {
-              const busy = busyIds.has(lead.id);
-              return (
-                <div
-                  key={lead.id}
-                  className="group rounded-3xl border border-black/5 bg-white/60 p-5 shadow-sm backdrop-blur transition-colors hover:bg-white/80 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
-                >
-                  <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                    <div className="space-y-2">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <div className="text-base font-semibold tracking-tight">{lead.name}</div>
-                        <span
-                          className={
-                            "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium " +
-                            pillClass(lead.contactStatus)
-                          }
-                        >
-                          {statusLabel(lead.contactStatus)}
-                        </span>
-                        <span className="inline-flex items-center rounded-full bg-zinc-900/10 px-2.5 py-1 text-xs font-medium text-zinc-700 dark:bg-white/10 dark:text-zinc-200">
-                          {typeLabel(lead.type)} · {lead.kommun}
-                        </span>
-                      </div>
 
-                      <a
-                        href={lead.websiteUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="block max-w-[72ch] break-all text-sm text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white"
-                      >
-                        {lead.websiteUrl}
-                      </a>
-
-                      <div className="flex flex-wrap gap-2 text-sm">
-                        {lead.emails.length ? (
-                          <div className="rounded-2xl border border-black/5 bg-white/70 px-3 py-2 dark:border-white/10 dark:bg-white/5">
-                            <div className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
-                              E-post
-                            </div>
-                            <div className="mt-0.5 text-sm font-medium">
-                              {lead.emails[0]}
-                            </div>
-                          </div>
-                        ) : null}
-                        {lead.phones.length ? (
-                          <div className="rounded-2xl border border-black/5 bg-white/70 px-3 py-2 dark:border-white/10 dark:bg-white/5">
-                            <div className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
-                              Telefon
-                            </div>
-                            <div className="mt-0.5 text-sm font-medium">
-                              {lead.phones[0]}
-                            </div>
-                          </div>
-                        ) : null}
-                        {!lead.emails.length && !lead.phones.length ? (
-                          <div className="text-sm text-zinc-500 dark:text-zinc-400">
-                            Inga kontaktuppgifter ännu. Kör berikning.
-                          </div>
-                        ) : null}
-                      </div>
-                    </div>
-
-                    <div className="flex flex-wrap items-center justify-start gap-2 sm:justify-end">
-                      <button
-                        type="button"
-                        disabled={busy}
-                        onClick={() => void enrichLead(lead)}
-                        className={
-                          "inline-flex h-9 items-center justify-center rounded-full px-3 text-sm font-medium transition-colors " +
-                          (busy
-                            ? "bg-zinc-900/20 text-zinc-600 dark:bg-white/10 dark:text-zinc-300"
-                            : "bg-zinc-900 text-white hover:bg-zinc-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200")
-                        }
-                      >
-                        {busy ? "Berikar…" : "Berika"}
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => setStatusForLead(lead.id, "saved")}
-                        className="inline-flex h-9 items-center justify-center rounded-full border border-black/10 bg-white/40 px-3 text-sm font-medium text-zinc-900 transition-colors hover:bg-white/70 dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10"
-                      >
-                        Spara
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setStatusForLead(lead.id, "contacted")}
-                        className="inline-flex h-9 items-center justify-center rounded-full border border-black/10 bg-white/40 px-3 text-sm font-medium text-zinc-900 transition-colors hover:bg-white/70 dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10"
-                      >
-                        Kontaktad
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setStatusForLead(lead.id, "dismissed")}
-                        className="inline-flex h-9 items-center justify-center rounded-full border border-black/10 bg-white/40 px-3 text-sm font-medium text-zinc-900 transition-colors hover:bg-white/70 dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10"
-                      >
-                        Inte relevant
-                      </button>
-                    </div>
+            {/* Lead List */}
+            <div className="flex-1 overflow-y-auto">
+              {filtered.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-full text-center p-8">
+                  <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
+                    <Search className="h-8 w-8 text-muted-foreground" />
+                  </div>
+                  <h3 className="text-lg font-medium mb-2">Inga leads hittades</h3>
+                  <p className="text-muted-foreground mb-4">
+                    Importera en CSV-fil för att komma igång
+                  </p>
+                  <div className="relative">
+                    <input
+                      type="file"
+                      accept=".csv,text/csv"
+                      className="absolute inset-0 cursor-pointer opacity-0"
+                      onChange={(e) => void onCsvFile(e.target.files?.[0] ?? null)}
+                    />
+                    <Button>Importera första CSV</Button>
                   </div>
                 </div>
-              );
-            })
+              ) : (
+                <div className="divide-y divide-border">
+                  {filtered.map((lead) => {
+                    const busy = busyIds.has(lead.id);
+                    const isSelected = selectedLead?.id === lead.id;
+                    return (
+                      <div
+                        key={lead.id}
+                        className={`p-4 cursor-pointer transition-colors hover:bg-muted/50 ${
+                          isSelected ? "bg-muted" : ""
+                        }`}
+                        onClick={() => setSelectedLead(lead)}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h3 className="font-medium truncate">{lead.name}</h3>
+                              <Badge className={statusColor(lead.contactStatus)}>
+                                {statusLabel(lead.contactStatus)}
+                              </Badge>
+                            </div>
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <Badge variant="outline" className={typeColor(lead.type)}>
+                                {typeLabel(lead.type)}
+                              </Badge>
+                              <span>{lead.kommun}</span>
+                            </div>
+                            <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
+                              {lead.emails.length > 0 && (
+                                <span className="flex items-center gap-1">
+                                  <Mail className="h-3 w-3" />
+                                  {lead.emails.length}
+                                </span>
+                              )}
+                              {lead.phones.length > 0 && (
+                                <span className="flex items-center gap-1">
+                                  <Phone className="h-3 w-3" />
+                                  {lead.phones.length}
+                                </span>
+                              )}
+                              <span className="flex items-center gap-1">
+                                <Globe className="h-3 w-3" />
+                                {lead.enrichmentStatus === "enriched" ? "Berikad" : "Ej berikad"}
+                              </span>
+                            </div>
+                          </div>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={busy}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              enrichLead(lead);
+                            }}
+                            className="shrink-0"
+                          >
+                            {busy ? (
+                              <Clock className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Search className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Right Panel - Lead Details */}
+        <div className="w-1/2 bg-background">
+          {selectedLead ? (
+            <div className="h-full flex flex-col">
+              {/* Lead Details Header */}
+              <div className="border-b border-border p-6">
+                <div className="flex items-start justify-between mb-4">
+                  <div>
+                    <h2 className="text-2xl font-bold mb-2">{selectedLead.name}</h2>
+                    <div className="flex items-center gap-2">
+                      <Badge className={statusColor(selectedLead.contactStatus)}>
+                        {statusLabel(selectedLead.contactStatus)}
+                      </Badge>
+                      <Badge variant="outline" className={typeColor(selectedLead.type)}>
+                        {typeLabel(selectedLead.type)}
+                      </Badge>
+                      <span className="text-sm text-muted-foreground">{selectedLead.kommun}</span>
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setSelectedLead(null)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Globe className="h-4 w-4" />
+                  <a
+                    href={selectedLead.websiteUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:text-foreground underline"
+                  >
+                    {selectedLead.websiteUrl}
+                  </a>
+                </div>
+              </div>
+
+              {/* Contact Information */}
+              <div className="flex-1 overflow-y-auto p-6">
+                <div className="space-y-6">
+                  {/* Contact Details */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <User className="h-5 w-5" />
+                        Kontaktuppgifter
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {selectedLead.emails.length > 0 ? (
+                        <div>
+                          <label className="text-sm font-medium text-muted-foreground">E-post</label>
+                          <div className="mt-1 space-y-1">
+                            {selectedLead.emails.map((email, index) => (
+                              <div key={index} className="flex items-center gap-2 p-2 bg-muted rounded">
+                                <Mail className="h-4 w-4 text-muted-foreground" />
+                                <span className="text-sm">{email}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-sm text-muted-foreground">Inga e-postadresser hittades</div>
+                      )}
+
+                      {selectedLead.phones.length > 0 ? (
+                        <div>
+                          <label className="text-sm font-medium text-muted-foreground">Telefon</label>
+                          <div className="mt-1 space-y-1">
+                            {selectedLead.phones.map((phone, index) => (
+                              <div key={index} className="flex items-center gap-2 p-2 bg-muted rounded">
+                                <Phone className="h-4 w-4 text-muted-foreground" />
+                                <span className="text-sm">{phone}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-sm text-muted-foreground">Inga telefonnummer hittades</div>
+                      )}
+
+                      {selectedLead.emails.length === 0 && selectedLead.phones.length === 0 && (
+                        <div className="text-center py-4">
+                          <p className="text-sm text-muted-foreground mb-4">
+                            Inga kontaktuppgifter ännu. Kör berikning för att hitta e-post och telefon.
+                          </p>
+                          <Button
+                            onClick={() => enrichLead(selectedLead)}
+                            disabled={busyIds.has(selectedLead.id)}
+                            className="gap-2"
+                          >
+                            {busyIds.has(selectedLead.id) ? (
+                              <Clock className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Search className="h-4 w-4" />
+                            )}
+                            {busyIds.has(selectedLead.id) ? "Berikar..." : "Berika lead"}
+                          </Button>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  {/* Actions */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">Åtgärder</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-2 gap-3">
+                        <Button
+                          variant="outline"
+                          onClick={() => setStatusForLead(selectedLead.id, "saved")}
+                          className="gap-2"
+                        >
+                          <CheckCircle2 className="h-4 w-4" />
+                          Spara
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => setStatusForLead(selectedLead.id, "contacted")}
+                          className="gap-2"
+                        >
+                          <Mail className="h-4 w-4" />
+                          Kontaktad
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => setStatusForLead(selectedLead.id, "dismissed")}
+                          className="gap-2 text-red-600 border-red-200 hover:bg-red-50"
+                        >
+                          <X className="h-4 w-4" />
+                          Inte relevant
+                        </Button>
+                        <Button
+                          onClick={() => window.open(`/offerter?lead=${selectedLead.id}`, '_blank')}
+                          className="gap-2"
+                        >
+                          <FileText className="h-4 w-4" />
+                          Skapa offert
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="h-full flex items-center justify-center text-center p-8">
+              <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
+                <User className="h-8 w-8 text-muted-foreground" />
+              </div>
+              <h3 className="text-lg font-medium mb-2">Välj en lead</h3>
+              <p className="text-muted-foreground">
+                Välj en lead från listan för att se detaljer och hantera kontaktuppgifter
+              </p>
+            </div>
           )}
         </div>
       </div>
